@@ -1,7 +1,7 @@
 package de.yungcat.lostshulkernoproblem;
 
 import org.bukkit.plugin.java.JavaPlugin;
-import de.yungcat.lostshulkernoproblem.handler.allEvents;
+import de.yungcat.lostshulkernoproblem.handler.EventProcessor;
 
 public final class LostShulkerNoProblem extends JavaPlugin {
 
@@ -9,7 +9,7 @@ public final class LostShulkerNoProblem extends JavaPlugin {
     public void onEnable() {
         // Plugin startup logic
 
-        new allEvents(this);
+        new EventProcessor(this);
     }
 
     @Override

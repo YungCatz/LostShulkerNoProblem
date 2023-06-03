@@ -13,11 +13,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
-public class allEvents implements Listener {
+public class EventProcessor implements Listener {
 
     LostShulkerNoProblem plugin;
 
-    public allEvents(LostShulkerNoProblem plugin) {
+    public EventProcessor(LostShulkerNoProblem plugin) {
         this.plugin = plugin;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
