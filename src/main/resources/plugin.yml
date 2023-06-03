@@ -1,0 +1,5 @@
+name: LostShulkerNoProblem
+version: '${project.version}'
+main: de.yungcat.lostshulkernoproblem.LostShulkerNoProblem
+api-version: 1.19
+description: If you placed your shulker and forgot to break it and pick it up again. This lets you know the coords where u left it.
