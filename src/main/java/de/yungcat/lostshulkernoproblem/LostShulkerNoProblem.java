@@ -10,8 +10,12 @@ import java.io.IOException;
 
 public final class LostShulkerNoProblem extends JavaPlugin {
 
-    public Gson gson;
+    private static Gson gson;
+
     public File dataFile;
+    public static Gson getGson() {
+        return gson;
+    }
 
     @Override
     public void onEnable() {

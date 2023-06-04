@@ -19,7 +19,7 @@ import java.util.*;
 
 public class EventProcessor implements Listener {
 
-    LostShulkerNoProblem plugin;
+    private final LostShulkerNoProblem plugin;
 
     public EventProcessor(LostShulkerNoProblem plugin) {
         this.plugin = plugin;
@@ -61,12 +61,12 @@ public class EventProcessor implements Listener {
             jsonData.putAll(playerData);
 
             //Saving the Data into the JSON File
-            String uuid = plugin.gson.toJson(jsonData);
+            String uuid = LostShulkerNoProblem.getGson().toJson(jsonData);
             try (FileWriter writer = new FileWriter(plugin.dataFile, true)) {
                 writer.write(uuid);
                 writer.write(System.lineSeparator());
-            } catch (IOException excep) {
-                excep.printStackTrace();
+            } catch (IOException except) {
+                except.printStackTrace();
             }
 
             //DEBUG PLAYER MESSAGE
@@ -108,10 +108,10 @@ public class EventProcessor implements Listener {
 
     //Coordinates Object for the adding and removing of the data in the json
     static class Coordinates {
-        private UUID world;
-        private int x;
-        private int y;
-        private int z;
+        private final UUID world;
+        private final int x;
+        private final int y;
+        private final int z;
 
         public Coordinates(UUID world, int x, int y, int z) {
             this.world = world;
