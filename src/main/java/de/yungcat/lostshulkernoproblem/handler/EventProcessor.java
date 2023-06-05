@@ -1,6 +1,9 @@
 package de.yungcat.lostshulkernoproblem.handler;
 
+import com.google.common.base.Objects;
+import com.google.common.reflect.TypeToken;
 import de.yungcat.lostshulkernoproblem.LostShulkerNoProblem;
+import de.yungcat.lostshulkernoproblem.util.Coordinates;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -13,17 +16,41 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.*;
 
 public class EventProcessor implements Listener {
 
     private final LostShulkerNoProblem plugin;
+    //DATA Structure
+    private final Map<String, Map<String, List<Coordinates>>> jsonData;
 
     public EventProcessor(LostShulkerNoProblem plugin) {
         this.plugin = plugin;
+        Map<String, Map<String, List<Coordinates>>> json;
+        Type type = new TypeToken<Map<String, Map<String, List<Coordinates>>>>() {
+        }.getType();
+        try {
+            json = LostShulkerNoProblem.getGson().fromJson(new FileReader(plugin.dataFile), type);
+        } catch (FileNotFoundException e) {
+            json = new HashMap<>();
+        }
+        this.jsonData = json;
         Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
+
+    public void saveJSONFile() {
+        //Saving the Data into the JSON File
+        String json = LostShulkerNoProblem.getGson().toJson(jsonData);
+        try (FileWriter writer = new FileWriter(plugin.dataFile)) {
+            writer.write(json);
+        } catch (IOException except) {
+            except.printStackTrace();
+        }
     }
 
     @EventHandler
@@ -42,32 +69,18 @@ public class EventProcessor implements Listener {
             int blockPosX = blockPlaced.getLocation().getBlockX();
             int blockPosY = blockPlaced.getLocation().getBlockY();
             int blockPosZ = blockPlaced.getLocation().getBlockZ();
-            
-            //DATA Structure
-            Map<String, Map<String, List<Coordinates>>> jsonData = new HashMap<>();
 
-            //List for the Coordinates
-            List<Coordinates> coordinates = new ArrayList<>();
-            coordinates.add(new Coordinates(worldUUID, blockPosX, blockPosY, blockPosZ));
+            Map<String, List<Coordinates>> playerData = jsonData.getOrDefault(playerUUID.toString(), new HashMap<>());
+            playerData.compute(blockType.name(), (s, coordinates) -> {
+                if (coordinates == null) coordinates = new ArrayList<>();
+                coordinates.add(new Coordinates(worldUUID, blockPosX, blockPosY, blockPosZ));
+                return coordinates;
+            });
 
-            //Map Entry for the Shulker Colors
-            Map<String, List<Coordinates>> shulkerColors = new HashMap<>();
-            shulkerColors.put(blockType.toString(), coordinates);
-
-            //Map Entry for the Player UUID
-            Map<String, Map<String, List<Coordinates>>> playerData = new HashMap<>();
-            playerData.put(playerUUID.toString(), shulkerColors);
-
-            jsonData.putAll(playerData);
+            jsonData.put(playerUUID.toString(), playerData);
 
             //Saving the Data into the JSON File
-            String uuid = LostShulkerNoProblem.getGson().toJson(jsonData);
-            try (FileWriter writer = new FileWriter(plugin.dataFile, true)) {
-                writer.write(uuid);
-                writer.write(System.lineSeparator());
-            } catch (IOException except) {
-                except.printStackTrace();
-            }
+            saveJSONFile();
 
             //DEBUG PLAYER MESSAGE
             //playerPlaced.sendMessage(playerName + "\n" + blockTypeString + "\n" + blockPosXYZ + "\n" + blockPosWorld);
@@ -86,43 +99,20 @@ public class EventProcessor implements Listener {
         int brokenPosZ = brokenBlock.getZ();
 
         if (brokenBlockState instanceof ShulkerBox) {
+            Coordinates coordinates = new Coordinates(worldBrokenBlock, brokenPosX, brokenPosY, brokenPosZ);
 
-            //DATA Structure
-            Map<String, Map<String, List<Coordinates>>> brokenShulkerData = new HashMap<>();
+            for (Map.Entry<String, Map<String, List<Coordinates>>> data : jsonData.entrySet()) {
+                for (Map.Entry<String, List<Coordinates>> colors : data.getValue().entrySet()) {
+                    for (Coordinates cord : colors.getValue()) {
+                        if (cord.equals(coordinates)) {
+                            colors.getValue().remove(cord);
+                            saveJSONFile();
+                            return;
+                        }
+                    }
+                }
+            }
 
-            //List for the Coordinates
-            List<Coordinates> brokenShulkerCoordinates = new ArrayList<>();
-            brokenShulkerCoordinates.add(new Coordinates(worldBrokenBlock, brokenPosX, brokenPosY, brokenPosZ));
-
-            //Map Entry for the Shulker Colors
-            Map<String, List<Coordinates>> shulkerColors = new HashMap<>();
-            shulkerColors.put(brokenBlockType.toString(), brokenShulkerCoordinates);
-
-            //Map Entry for the Player UUID
-            Map<String, Map<String, List<Coordinates>>> playerData = new HashMap<>();
-            playerData.put(playerBrokeBlock.toString(), shulkerColors);
-
-            brokenShulkerData.putAll(playerData);
         }
-    }
-
-    //Coordinates Object for the adding and removing of the data in the json
-    static class Coordinates {
-        private final UUID world;
-        private final int x;
-        private final int y;
-        private final int z;
-
-        public Coordinates(UUID world, int x, int y, int z) {
-            this.world = world;
-            this.x = x;
-            this.y = y;
-            this.z = z;
-        }
-
-        public UUID getWorld() {return world;}
-        public int x() {return x;}
-        public int y() {return y;}
-        public int z() {return z;}
     }
 }

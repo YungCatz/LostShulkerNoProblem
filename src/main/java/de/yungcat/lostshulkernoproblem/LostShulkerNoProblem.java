@@ -36,7 +36,6 @@ public final class LostShulkerNoProblem extends JavaPlugin {
                 e.printStackTrace();
             }
         }
-
     }
     @Override
     public void onDisable() {
